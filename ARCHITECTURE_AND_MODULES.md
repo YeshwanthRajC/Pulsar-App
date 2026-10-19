@@ -1,6 +1,6 @@
-# Pulsar (VoiceTask AI) — Modules & Architecture Guide
+# Pulsar — Modules & Architecture Guide
 
-Welcome to the comprehensive architecture guide for **Pulsar (VoiceTask AI)**.
+Welcome to the comprehensive architecture guide for **Pulsar**.
 
 This document provides a human-written explanation of every component, module, service, widget, and Action Module in this codebase, explaining what they do, why they exist, and how they connect to one another.
 
@@ -393,13 +393,13 @@ graph TD
 ## 10. Final Application Build & Native Packaging
 
 ### Pre-Built Binary Details
-- **Final APK File**: [`build/app/outputs/flutter-apk/pulsar.apk`](file:///c:/Users/yeshwanthRaj/Documents/Pulsar/build/app/outputs/flutter-apk/pulsar.apk)
+- **Final APK File**: [`build/app/outputs/flutter-apk/pulsar.apk`]
 - **Target Platform**: Android ARM64 (`android-arm64`, Android 7.0+ / API 24+)
 - **Binary Size**: ~142 MB (`142,210,463 bytes`, fully self-contained with embedded on-device AI models)
 - **Quality Assurance**: Verified with `flutter test` (42/42 unit and widget tests passing, including responsive layout tests down to 320 px) and `flutter analyze` (0 issues).
 
 ### Native Engine Architecture
-- **CMake Build**: [`android/app/src/main/cpp/CMakeLists.txt`](file:///c:/Users/yeshwanthRaj/Documents/Pulsar/android/app/src/main/cpp/CMakeLists.txt) compiles `pulsar_needle.cpp` and links the static engine library `libneedle.a` into `libpulsar_needle.so` using `-Wl,--whole-archive`.
+- **CMake Build**: [`android/app/src/main/cpp/CMakeLists.txt`](Pulsar/android/app/src/main/cpp/CMakeLists.txt) compiles `pulsar_needle.cpp` and links the static engine library `libneedle.a` into `libpulsar_needle.so` using `-Wl,--whole-archive`.
 - **Embedded AI Models**:
   - `assets/models/whistle.cact` (16.9 MB): Automatic Speech Recognition.
   - `assets/models/needle.cact` (35.3 MB): Quantized 20-layer Needle 3 Tool-Calling LLM.

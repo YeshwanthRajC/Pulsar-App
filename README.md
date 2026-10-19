@@ -1,9 +1,14 @@
 # Pulsar — Your Day, In Orbit
 
-> **Privacy-first, voice-powered task manager for Android & Desktop** built with **Flutter**, **SQLite**, and **On-Device AI** (Cactus Whistle ASR + Cactus Needle 3 Mini-LLM via Native C++ FFI).
+## 📢About the project
+
+> The name pulsar is inspired from the neutron star which is rotating at insane speeds in our universe.
+> The app is built to explore the performances of the models from Cactus-Compute platform which includes Whistle (Speech-to-Text) and Needle (A simple model for tool calling and data extraction).
+> These models are integrated within the application so it runs on device and does not require any internet connection. Thanks to its minimal size (Whistle: 16.9 MB, Needle: 35.3 MB).
+> The app follows a privacy-first approach and does not collect any user data. All the data is stored locally on the device.
+> The app including the models are performing well and incase if there are any issues, the app provides several fallback options to the user, ensuring smooth user experience.
 
 ---
-
 ## 📸 App Screenshots
 
 | 1. Calendar Home | 2. Voice Input | 3. AI Draft Review | 4. Manual Entry | 5. Settings & AI Status |
@@ -54,21 +59,14 @@
 
 The final production-ready APK is pre-compiled for Android (ARM64) with native on-device AI models embedded:
 
-- **Location**: [`build/app/outputs/flutter-apk/pulsar.apk`](file:///c:/Users/yeshwanthRaj/Documents/Pulsar/build/app/outputs/flutter-apk/pulsar.apk)
-- **App Name**: `Pulsar`
-- **Package ID**: `com.pulsar.voicetask.pulsar`
-- **Binary Size**: ~142 MB (includes embedded 16.9 MB Whistle ASR and 35.3 MB Needle 3 models)
-- **Installation**:
-  ```bash
-  adb install -r build/app/outputs/flutter-apk/pulsar.apk
-  ```
+https://drive.google.com/file/d/1KnjmGvPPN9psraNu4fas5ln_X8EUUApF/view?usp=sharing
 
 ---
 
 ## 📖 In-Depth Documentation
 
 For a detailed explanation of every component, module, widget, and the Action Modules architecture, see:
-👉 **[ARCHITECTURE_AND_MODULES.md](file:///c:/Users/yeshwanthRaj/Documents/Pulsar/ARCHITECTURE_AND_MODULES.md)**
+👉 **[ARCHITECTURE_AND_MODULES.md]
 
 ---
 
