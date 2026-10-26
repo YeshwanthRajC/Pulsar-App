@@ -6,6 +6,7 @@ import '../../providers/task_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../ai/cactus_config.dart';
 import '../../ai/cactus_service.dart' show ModelStatus;
+import '../../services/alarm_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -122,6 +123,23 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
+
+          const SizedBox(height: 24),
+
+          // Section: Alarm
+          Text(
+            'Alarm',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isDark
+                  ? AppColors.moonlightGrey
+                  : AppColors.lightTextSecondary,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const _AlarmSettingsCard(),
 
           const SizedBox(height: 24),
 
@@ -518,6 +536,129 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AlarmSettingsCard extends StatefulWidget {
+  const _AlarmSettingsCard();
+
+  @override
+  State<_AlarmSettingsCard> createState() => _AlarmSettingsCardState();
+}
+
+class _AlarmSettingsCardState extends State<_AlarmSettingsCard> {
+  int _timeout = 5;
+  int _snooze = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    final svc = AlarmService.instance;
+    svc.getTimeoutMinutes().then((v) {
+      if (mounted) setState(() => _timeout = v);
+    });
+    svc.getSnoozeMinutes().then((v) {
+      if (mounted) setState(() => _snooze = v);
+    });
+  }
+
+  Widget _row({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required int value,
+    required List<int> options,
+    required ValueChanged<int> onChanged,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 12,
+          color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+        ),
+      ),
+      trailing: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: value,
+          dropdownColor: isDark ? AppColors.nebulaNavy : AppColors.lightCard,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
+          ),
+          items: [
+            for (final o in options)
+              DropdownMenuItem(value: o, child: Text('$o min')),
+          ],
+          onChanged: (v) {
+            if (v != null) onChanged(v);
+          },
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.nebulaNavy : AppColors.lightCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? AppColors.nebulaNavyBorder : AppColors.lightBorder,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            _row(
+              isDark: isDark,
+              icon: Icons.timer_outlined,
+              title: 'Ring Duration',
+              subtitle: 'Alarm turns off automatically after this time',
+              value: _timeout,
+              options: AlarmService.timeoutOptions,
+              onChanged: (v) {
+                setState(() => _timeout = v);
+                AlarmService.instance.setTimeoutMinutes(v);
+              },
+            ),
+            Divider(
+              height: 1,
+              color: isDark ? AppColors.nebulaNavyBorder : AppColors.lightBorder,
+            ),
+            _row(
+              isDark: isDark,
+              icon: Icons.snooze_rounded,
+              title: 'Snooze Time',
+              subtitle: 'How long a snoozed alarm waits before ringing again',
+              value: _snooze,
+              options: AlarmService.snoozeOptions,
+              onChanged: (v) {
+                setState(() => _snooze = v);
+                AlarmService.instance.setSnoozeMinutes(v);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

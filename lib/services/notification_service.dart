@@ -4,6 +4,50 @@ import 'package:intl/intl.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import '../../models/task_model.dart';
+import '../data/repositories/task_repository.dart';
+import 'alarm_service.dart';
+
+const String kAlarmActionDismiss = 'alarm_dismiss';
+const String kAlarmActionDone = 'alarm_done';
+const String kAlarmActionSnooze = 'alarm_snooze';
+const int kAlarmCompanionOffset = 1000000;
+
+/// Handles taps/actions on the alarm companion notification. Runs headless
+/// (app closed) as well as in the foreground.
+Future<void> handleAlarmNotificationResponse(NotificationResponse r) async {
+  final payload = r.payload;
+  if (payload == null || !payload.startsWith('alarm:')) return;
+  final body = payload.substring(6);
+  final sep = body.indexOf('|');
+  final id = int.tryParse(sep == -1 ? body : body.substring(0, sep));
+  final title = sep == -1 ? 'Task Alarm' : body.substring(sep + 1);
+  if (id == null) return;
+
+  final action = r.actionId;
+  // Plain tap on the body just opens the app (ring screen shows automatically).
+  if (action == null || action.isEmpty) return;
+
+  await NotificationService.instance.initialize();
+  await AlarmService.instance.initialize();
+
+  if (action == kAlarmActionSnooze) {
+    await AlarmService.instance.snoozeAlarm(id, title: title);
+  } else {
+    await AlarmService.instance.stopRingingAlarm(id);
+    if (action == kAlarmActionDone) {
+      try {
+        await TaskRepository().toggleTask(id);
+      } catch (e) {
+        debugPrint('Alarm action: failed to complete task $id: $e');
+      }
+    }
+  }
+  NotificationService.instance.onExternalChange?.call();
+}
+
+@pragma('vm:entry-point')
+Future<void> alarmNotificationBackgroundHandler(NotificationResponse r) =>
+    handleAlarmNotificationResponse(r);
 
 class NotificationService {
   static final NotificationService instance = NotificationService._init();
@@ -12,6 +56,9 @@ class NotificationService {
 
   bool _initialized = false;
   bool _enabled = true;
+
+  /// Invoked after a notification action changed task data (to refresh UI).
+  VoidCallback? onExternalChange;
 
   NotificationService._init();
 
@@ -55,7 +102,10 @@ class NotificationService {
         settings: settings,
         onDidReceiveNotificationResponse: (NotificationResponse response) {
           debugPrint('Notification clicked: ${response.payload}');
+          handleAlarmNotificationResponse(response);
         },
+        onDidReceiveBackgroundNotificationResponse:
+            alarmNotificationBackgroundHandler,
       );
 
       _initialized = true;
@@ -154,6 +204,56 @@ class NotificationService {
       if (!task.isCompleted && task.hasReminder) {
         await scheduleTaskReminder(task);
       }
+    }
+  }
+
+  /// Schedules a companion notification at alarm time with action buttons
+  /// (Dismiss & Mark Done / Dismiss / Snooze) that work without opening the app.
+  Future<void> scheduleAlarmCompanion(int taskId, String title, DateTime at) async {
+    if (!_initialized || kIsWeb) return;
+    try {
+      final snoozeMin = await AlarmService.instance.getSnoozeMinutes();
+      final details = NotificationDetails(
+        android: AndroidNotificationDetails(
+          'pulsar_alarm_actions',
+          'Alarm Actions',
+          channelDescription: 'Quick actions for ringing task alarms',
+          importance: Importance.max,
+          priority: Priority.max,
+          category: AndroidNotificationCategory.alarm,
+          fullScreenIntent: false,
+          autoCancel: true,
+          timeoutAfter: 600000,
+          actions: <AndroidNotificationAction>[
+            AndroidNotificationAction(kAlarmActionDone, 'Dismiss & Done',
+                cancelNotification: true),
+            AndroidNotificationAction(kAlarmActionDismiss, 'Dismiss',
+                cancelNotification: true),
+            AndroidNotificationAction(kAlarmActionSnooze, 'Snooze ${snoozeMin}m',
+                cancelNotification: true),
+          ],
+        ),
+      );
+      await _notificationsPlugin.zonedSchedule(
+        id: kAlarmCompanionOffset + taskId,
+        title: '⏰ $title',
+        body: 'Alarm ringing • choose an action',
+        scheduledDate: tz.TZDateTime.from(at, tz.UTC),
+        notificationDetails: details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: 'alarm:$taskId|$title',
+      );
+    } catch (e) {
+      debugPrint('Error scheduling alarm companion: $e');
+    }
+  }
+
+  Future<void> cancelAlarmCompanion(int taskId) async {
+    if (!_initialized || kIsWeb) return;
+    try {
+      await _notificationsPlugin.cancel(id: kAlarmCompanionOffset + taskId);
+    } catch (e) {
+      debugPrint('Error cancelling alarm companion: $e');
     }
   }
 

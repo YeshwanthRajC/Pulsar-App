@@ -50,6 +50,7 @@ dependencies:
   webview_flutter: ^4.14.1
   webview_flutter_web: ^0.2.3+4
   alarm: ^5.15.0
+  android_alarm_manager_plus: ^5.1.2
 
 dev_dependencies:
   flutter_test:

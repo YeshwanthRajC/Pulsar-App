@@ -29,7 +29,12 @@ class _AlarmRingScreenState extends State<AlarmRingScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
+    AlarmService.instance.getSnoozeMinutes().then((m) {
+      if (mounted) setState(() => _snoozeMinutes = m);
+    });
   }
+
+  int _snoozeMinutes = 10;
 
   @override
   void dispose() {
@@ -39,9 +44,6 @@ class _AlarmRingScreenState extends State<AlarmRingScreen>
 
   void _dismiss(BuildContext context) {
     AlarmService.instance.stopRingingAlarm(widget.alarmSettings.id);
-    if (context.mounted) {
-      Navigator.of(context).pop();
-    }
   }
 
   void _dismissAndComplete(BuildContext context) {
@@ -52,12 +54,9 @@ class _AlarmRingScreenState extends State<AlarmRingScreen>
   void _snooze(BuildContext context) {
     AlarmService.instance.snoozeAlarm(
       widget.alarmSettings.id,
-      minutes: 10,
+      minutes: _snoozeMinutes,
       title: widget.alarmSettings.notificationSettings.title,
     );
-    if (context.mounted) {
-      Navigator.of(context).pop();
-    }
   }
 
   @override
@@ -240,8 +239,8 @@ class _AlarmRingScreenState extends State<AlarmRingScreen>
                             child: ElevatedButton.icon(
                               icon: const Icon(Icons.snooze_rounded,
                                   color: Colors.white, size: 20),
-                              label: const Text(
-                                'Snooze 10m',
+                              label: Text(
+                                'Snooze ${_snoozeMinutes}m',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
