@@ -59,6 +59,10 @@ class ActionRouter {
               'type': 'boolean',
               'description': 'True if the user asked to be reminded.',
             },
+            'hasAlarm': {
+              'type': 'boolean',
+              'description': 'True if the user specifically asked for an alarm.',
+            },
           },
           'required': ['title'],
         },

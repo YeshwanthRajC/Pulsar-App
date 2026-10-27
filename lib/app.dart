@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/constants/app_colors.dart';
 import 'core/constants/app_theme.dart';
 import 'providers/theme_provider.dart';
 import 'providers/task_provider.dart';
@@ -25,6 +26,8 @@ class _PulsarAppState extends State<PulsarApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    AlarmService.instance.appInForeground =
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     AlarmService.instance.syncRingingState();
     NotificationService.instance.onExternalChange = () {
       final ctx = PulsarApp.navigatorKey.currentContext;
@@ -43,6 +46,7 @@ class _PulsarAppState extends State<PulsarApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    AlarmService.instance.appInForeground = (state == AppLifecycleState.resumed);
     if (state == AppLifecycleState.resumed) {
       // Alarm may have started/been dismissed (e.g. via notification) while away.
       AlarmService.instance.syncRingingState();
@@ -68,16 +72,20 @@ class _PulsarAppState extends State<PulsarApp> with WidgetsBindingObserver {
         return ValueListenableBuilder<AlarmSettings?>(
           valueListenable: AlarmService.instance.ringingAlarmNotifier,
           builder: (context, ringing, _) {
+            final showHome = child ?? const SizedBox.shrink();
             return Stack(
               children: [
-                child ?? const SizedBox.shrink(),
+                if (!AlarmService.instance.openedForAlarm)
+                  showHome
+                else
+                  const ColoredBox(color: AppColors.cosmicBlack),
                 if (ringing != null)
                   Positioned.fill(
                     child: AlarmRingScreen(
                       key: ValueKey(ringing.id),
                       alarmSettings: ringing,
-                      onDismissAndComplete: () {
-                        context.read<TaskProvider>().toggleTask(ringing.id);
+                      onDismissAndComplete: () async {
+                        await context.read<TaskProvider>().toggleTask(ringing.id);
                       },
                     ),
                   ),

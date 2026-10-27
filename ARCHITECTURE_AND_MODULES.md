@@ -220,16 +220,21 @@ Represents an individual task with properties:
 
 ### NotificationService (`lib/services/notification_service.dart`)
 - Wraps `flutter_local_notifications` with timezone support (`timezone/timezone.dart`).
-- Configures high-importance Android notification channels (`pulsar_task_reminders`).
+- Configures high-importance Android notification channels (`pulsar_task_reminders` and `pulsar_alarm_actions`).
 - Schedules exact notifications for tasks with `hasReminder == true` (falling back to inexact when permission is restricted).
+- Posts high-priority companion notifications for ringing alarms with 1-tap actionable buttons (`Dismiss & Done`, `Dismiss`, `Snooze`) that work outside the app without opening it.
+- Detects when the user taps the notification body and flags `AlarmService.openedForAlarm = true` so the alarm UI knows to exit cleanly rather than divert to the home screen.
 - Supports pausing/resuming notifications via the home bell icon: when paused, tasks retain their reminders; when resumed, `rescheduleAll()` reschedules upcoming reminders.
 - Shows first-launch hint bubble explaining notification pause/resume.
 
 ### AlarmService (`lib/services/alarm_service.dart`)
-- Coordinates loud audio alarms for tasks flagged with `hasAlarm == true`.
-- Schedules system-level wake alarms that trigger full-screen alerting via `AlarmRingScreen`.
-- Integrates directly with `TaskProvider` upon task creation, rescheduling, or completion.
-- Handles audio playback, vibration patterns, and device wake-locks to ensure alarms ring reliably even when the device is locked or the application is in the background.
+- Coordinates loud, continuous audio alarms for tasks flagged with `hasAlarm == true`.
+- Enforces strict mutual exclusion between Reminders and Alarms across task creation, editing, and database storage.
+- Schedules system-level alarms triggering full-screen alerting via `AlarmRingScreen`.
+- **Configurable Durations**: Persists user preferences for Ring Duration (3, 5, 10, 15 min) and Snooze Duration (5, 10, 15, 30 min).
+- **OS-Level Auto-Stop**: Leverages `android_alarm_manager_plus` to register an exact system timer that silences ringing alarms once the ring duration has elapsed, even if the app process has been killed.
+- **Backend Timekeeping for Snooze**: Accurately calculates target reschedule timestamps (`now + snoozeMinutes`), updates the alarm scheduler, and preserves snooze state.
+- **Origin & Lifecycle Tracking**: Automatically tracks `appInForeground` via `WidgetsBindingObserver` and sets `openedForAlarm` when alarms fire or are launched while the app is in the background.
 
 ### VoiceCaptureService (`lib/services/voice_capture_service.dart`)
 - Wraps `package:record` to capture 16 kHz mono float PCM audio directly for Whistle.
@@ -310,7 +315,16 @@ The primary state coordinator for the app:
 ### 3. AlarmRingScreen (`lib/ui/alarm/alarm_ring_screen.dart`)
 - Dedicated full-screen high-priority alert interface launched when a task alarm triggers.
 - Features animated cosmic pulsation rings, task title header, and scheduled due time display.
-- Actions: **Snooze** (reschedules alarm by 10 minutes) and **Dismiss** (cancels alarm and returns to previous view).
+- **DualSwipeSlider (`lib/ui/alarm/widgets/dual_swipe_slider.dart`)**:
+  - Bidirectional swipe control with spring-back physics, dynamic gradient glows, and haptic feedback:
+    - **Swipe Right 👉 (Dismiss & Done)**: Silences the alarm and marks the task as completed in SQLite.
+    - **Swipe Left 👈 (Snooze)**: Silences the alarm and reschedules it for the user's chosen snooze duration with full backend timekeeping.
+  - Secondary text button to *"Dismiss without completing"*.
+- **Seamless Clean Exit via AppControl (`lib/core/utils/app_control.dart`)**:
+  - When the user taps the alarm notification from outside the app, taking action (snooze or dismiss) invokes a native method channel on `MainActivity.kt` (`moveTaskToBack(true)` + `finish()`) to immediately close the screen and return the user to their previous app or launcher without diverting to `HomeScreen`.
+  - Backed by an opaque cosmic black layer in `lib/app.dart` to prevent any visual flickering of the main app during exit.
+- **AlarmTutorialDialog (`lib/ui/alarm/widgets/alarm_tutorial_dialog.dart`)**:
+  - Center modal tutorial dialog shown once on initial installation explaining swipe directions and Settings customization.
 
 ### 4. TaskDetailsScreen (`lib/ui/details/task_details_screen.dart`)
 - Dedicated detail view supporting inline editing of task titles and descriptions.
@@ -320,12 +334,13 @@ The primary state coordinator for the app:
   - Displays real-time time badge updates and quick preset chips (`9:00 AM`, `12:00 PM`, `6:00 PM`, `7:00 PM`, `9:00 PM`, `Clear time`).
   - Tapping the time badge opens the standard time picker dial as an alternative input method.
   - **Immutable Date Protection**: Keeps the task date strictly read-only while editing time, protecting against unintentional schedule shifts.
-- Status badges showing schedule date/time, reminder state, and alarm state.
+- Status badges showing schedule date/time, reminder state, and alarm state (mutually exclusive with explanatory tooltip).
 - Primary actions: **Delete Task** (error red outline) and **Mark as Completed / Mark as Pending** (pulsar cyan fill).
 
 ### 5. SettingsScreen (`lib/ui/settings/settings_screen.dart`)
 - **Theme Selector**: Toggle between deep Cosmic Black and crisp Light Theme.
 - **On-Device AI Status**: Live diagnostics panel verifying model loading (`whistle.cact` and `needle.cact`), engine initialization, and memory status.
+- **Alarm Settings Card**: Dropdown selectors for **Ring Duration** (3, 5, 10, or 15 min) and **Snooze Time** (5, 10, 15, or 30 min) persisted locally.
 - **Erase All Data**: Destructive action with safety confirmation dialog to wipe SQLite storage and cancel all scheduled local notifications.
 
 ---

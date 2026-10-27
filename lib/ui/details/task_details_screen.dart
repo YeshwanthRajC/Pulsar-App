@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
 import '../../core/constants/app_colors.dart';
@@ -27,7 +28,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     super.initState();
     _currentTask = widget.task;
     _titleController = TextEditingController(text: _currentTask.title);
-    _descController = TextEditingController(text: _currentTask.description ?? '');
+    _descController = TextEditingController(
+      text: _currentTask.description ?? '',
+    );
     _editingDueTime = _currentTask.dueTime;
     _sliderMinutes = _timeStringToMinutes(_currentTask.dueTime);
   }
@@ -83,7 +86,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   }
 
   Future<void> _pickTime(BuildContext context) async {
-    final tod = _parseTimeOfDay(_editingDueTime ?? _currentTask.dueTime) ??
+    final tod =
+        _parseTimeOfDay(_editingDueTime ?? _currentTask.dueTime) ??
         const TimeOfDay(hour: 10, minute: 0);
     final picked = await showTimePicker(
       context: context,
@@ -120,8 +124,12 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 
   void _saveEdits() {
     final updated = _currentTask.copyWith(
-      title: _titleController.text.trim().isEmpty ? _currentTask.title : _titleController.text.trim(),
-      description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
+      title: _titleController.text.trim().isEmpty
+          ? _currentTask.title
+          : _titleController.text.trim(),
+      description: _descController.text.trim().isEmpty
+          ? null
+          : _descController.text.trim(),
       dueTime: _editingDueTime,
       clearDueTime: _editingDueTime == null,
     );
@@ -133,7 +141,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   }
 
   void _toggleReminder(bool val) {
-    final updated = _currentTask.copyWith(hasReminder: val);
+    final updated = _currentTask.copyWith(
+      hasReminder: val,
+      hasAlarm: val ? false : _currentTask.hasAlarm,
+    );
     setState(() {
       _currentTask = updated;
     });
@@ -141,7 +152,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   }
 
   void _toggleAlarm(bool val) {
-    final updated = _currentTask.copyWith(hasAlarm: val);
+    final updated = _currentTask.copyWith(
+      hasAlarm: val,
+      hasReminder: val ? false : _currentTask.hasReminder,
+    );
     setState(() {
       _currentTask = updated;
     });
@@ -164,14 +178,18 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Task'),
-        content: Text('Are you sure you want to delete "${_currentTask.title}"?'),
+        content: Text(
+          'Are you sure you want to delete "${_currentTask.title}"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.errorRed),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.errorRed,
+            ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
@@ -217,7 +235,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             color: isSelected
                 ? primaryColor
-                : (isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary),
+                : (isDark
+                      ? AppColors.moonlightGrey
+                      : AppColors.lightTextSecondary),
           ),
         ),
       ),
@@ -292,16 +312,25 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 child: _isEditing
                     ? TextField(
                         controller: _titleController,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        decoration: const InputDecoration(hintText: 'Task Title'),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        decoration: const InputDecoration(
+                          hintText: 'Task Title',
+                        ),
                       )
                     : Text(
                         _currentTask.title,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
-                          decoration: _currentTask.isCompleted ? TextDecoration.lineThrough : null,
+                          color: isDark
+                              ? AppColors.starlightWhite
+                              : AppColors.lightTextPrimary,
+                          decoration: _currentTask.isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
                       ),
               ),
@@ -317,7 +346,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               color: isDark ? AppColors.nebulaNavy : AppColors.lightCard,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? AppColors.nebulaNavyBorder : AppColors.lightBorder,
+                color: isDark
+                    ? AppColors.nebulaNavyBorder
+                    : AppColors.lightBorder,
               ),
             ),
             child: Row(
@@ -330,12 +361,16 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 const SizedBox(width: 14),
                 Text(
                   _currentTask.dueDate != null
-                      ? AppDateUtils.fullDateFormat.format(_currentTask.dueDate!)
+                      ? AppDateUtils.fullDateFormat.format(
+                          _currentTask.dueDate!,
+                        )
                       : 'No date specified',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+                    color: isDark
+                        ? AppColors.starlightWhite
+                        : AppColors.lightTextPrimary,
                   ),
                 ),
               ],
@@ -352,14 +387,22 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: _isEditing
-                    ? (isDark ? AppColors.pulsarCyan.withValues(alpha: 0.6) : AppColors.lightCyan.withValues(alpha: 0.6))
-                    : (isDark ? AppColors.nebulaNavyBorder : AppColors.lightBorder),
+                    ? (isDark
+                          ? AppColors.pulsarCyan.withValues(alpha: 0.6)
+                          : AppColors.lightCyan.withValues(alpha: 0.6))
+                    : (isDark
+                          ? AppColors.nebulaNavyBorder
+                          : AppColors.lightBorder),
                 width: _isEditing ? 1.5 : 1.0,
               ),
               boxShadow: _isEditing
                   ? [
                       BoxShadow(
-                        color: (isDark ? AppColors.pulsarCyan : AppColors.lightCyan).withValues(alpha: 0.08),
+                        color:
+                            (isDark
+                                    ? AppColors.pulsarCyan
+                                    : AppColors.lightCyan)
+                                .withValues(alpha: 0.08),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -378,7 +421,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                             children: [
                               Icon(
                                 Icons.access_time_outlined,
-                                color: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
+                                color: isDark
+                                    ? AppColors.pulsarCyan
+                                    : AppColors.lightCyan,
                                 size: 20,
                               ),
                               const SizedBox(width: 10),
@@ -387,7 +432,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+                                  color: isDark
+                                      ? AppColors.moonlightGrey
+                                      : AppColors.lightTextSecondary,
                                 ),
                               ),
                             ],
@@ -396,12 +443,23 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                             onTap: () => _pickTime(context),
                             borderRadius: BorderRadius.circular(10),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
                               decoration: BoxDecoration(
-                                color: (isDark ? AppColors.pulsarCyan : AppColors.lightCyan).withValues(alpha: 0.15),
+                                color:
+                                    (isDark
+                                            ? AppColors.pulsarCyan
+                                            : AppColors.lightCyan)
+                                        .withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: (isDark ? AppColors.pulsarCyan : AppColors.lightCyan).withValues(alpha: 0.4),
+                                  color:
+                                      (isDark
+                                              ? AppColors.pulsarCyan
+                                              : AppColors.lightCyan)
+                                          .withValues(alpha: 0.4),
                                 ),
                               ),
                               child: Row(
@@ -412,14 +470,18 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
+                                      color: isDark
+                                          ? AppColors.pulsarCyan
+                                          : AppColors.lightCyan,
                                     ),
                                   ),
                                   const SizedBox(width: 4),
                                   Icon(
                                     Icons.edit_calendar,
                                     size: 14,
-                                    color: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
+                                    color: isDark
+                                        ? AppColors.pulsarCyan
+                                        : AppColors.lightCyan,
                                   ),
                                 ],
                               ),
@@ -432,16 +494,34 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       // Time Slider (0 to 1425 minutes in 15-min increments)
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
-                          inactiveTrackColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-                          thumbColor: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
-                          overlayColor: (isDark ? AppColors.pulsarCyan : AppColors.lightCyan).withValues(alpha: 0.2),
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
-                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
+                          activeTrackColor: isDark
+                              ? AppColors.pulsarCyan
+                              : AppColors.lightCyan,
+                          inactiveTrackColor: isDark
+                              ? const Color(0xFF1E293B)
+                              : const Color(0xFFE2E8F0),
+                          thumbColor: isDark
+                              ? AppColors.pulsarCyan
+                              : AppColors.lightCyan,
+                          overlayColor:
+                              (isDark
+                                      ? AppColors.pulsarCyan
+                                      : AppColors.lightCyan)
+                                  .withValues(alpha: 0.2),
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 9,
+                          ),
+                          overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 18,
+                          ),
                           trackHeight: 4,
-                          valueIndicatorColor: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
+                          valueIndicatorColor: isDark
+                              ? AppColors.pulsarCyan
+                              : AppColors.lightCyan,
                           valueIndicatorTextStyle: TextStyle(
-                            color: isDark ? AppColors.cosmicBlack : Colors.white,
+                            color: isDark
+                                ? AppColors.cosmicBlack
+                                : Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
@@ -471,21 +551,27 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                               '12:00 AM',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+                                color: isDark
+                                    ? AppColors.moonlightGrey
+                                    : AppColors.lightTextSecondary,
                               ),
                             ),
                             Text(
                               '12:00 PM',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+                                color: isDark
+                                    ? AppColors.moonlightGrey
+                                    : AppColors.lightTextSecondary,
                               ),
                             ),
                             Text(
                               '11:45 PM',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+                                color: isDark
+                                    ? AppColors.moonlightGrey
+                                    : AppColors.lightTextSecondary,
                               ),
                             ),
                           ],
@@ -514,12 +600,19 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                               },
                               borderRadius: BorderRadius.circular(8),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.errorRed.withValues(alpha: 0.1),
+                                  color: AppColors.errorRed.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: AppColors.errorRed.withValues(alpha: 0.3),
+                                    color: AppColors.errorRed.withValues(
+                                      alpha: 0.3,
+                                    ),
                                   ),
                                 ),
                                 child: const Text(
@@ -540,7 +633,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     children: [
                       Icon(
                         Icons.access_time_outlined,
-                        color: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
+                        color: isDark
+                            ? AppColors.pulsarCyan
+                            : AppColors.lightCyan,
                         size: 20,
                       ),
                       const SizedBox(width: 14),
@@ -549,7 +644,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+                          color: isDark
+                              ? AppColors.starlightWhite
+                              : AppColors.lightTextPrimary,
                         ),
                       ),
                     ],
@@ -564,7 +661,11 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               color: isDark ? AppColors.nebulaNavy : AppColors.lightCard,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? AppColors.nebulaNavyBorder : AppColors.lightBorder,
+                color: _currentTask.hasReminder
+                    ? (isDark ? AppColors.pulsarCyan : AppColors.lightCyan)
+                    : (isDark
+                          ? AppColors.nebulaNavyBorder
+                          : AppColors.lightBorder),
               ),
             ),
             child: Material(
@@ -572,7 +673,11 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               child: SwitchListTile(
                 secondary: Icon(
                   Icons.notifications_outlined,
-                  color: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
+                  color: _currentTask.hasReminder
+                      ? (isDark ? AppColors.pulsarCyan : AppColors.lightCyan)
+                      : (isDark
+                            ? AppColors.moonlightGrey
+                            : AppColors.lightTextSecondary),
                   size: 20,
                 ),
                 title: Text(
@@ -580,7 +685,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+                    color: isDark
+                        ? AppColors.starlightWhite
+                        : AppColors.lightTextPrimary,
                   ),
                 ),
                 value: _currentTask.hasReminder,
@@ -599,7 +706,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               border: Border.all(
                 color: _currentTask.hasAlarm
                     ? (isDark ? AppColors.pulsarCyan : AppColors.lightCyan)
-                    : (isDark ? AppColors.nebulaNavyBorder : AppColors.lightBorder),
+                    : (isDark
+                          ? AppColors.nebulaNavyBorder
+                          : AppColors.lightBorder),
               ),
             ),
             child: Material(
@@ -609,7 +718,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   Icons.alarm_rounded,
                   color: _currentTask.hasAlarm
                       ? (isDark ? AppColors.pulsarCyan : AppColors.lightCyan)
-                      : (isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary),
+                      : (isDark
+                            ? AppColors.moonlightGrey
+                            : AppColors.lightTextSecondary),
                   size: 20,
                 ),
                 title: Text(
@@ -617,18 +728,57 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+                    color: isDark
+                        ? AppColors.starlightWhite
+                        : AppColors.lightTextPrimary,
                   ),
                 ),
                 subtitle: Text(
                   'Rings loud alarm when due',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.moonlightGrey
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
                 value: _currentTask.hasAlarm,
                 onChanged: _toggleAlarm,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Tooltip / Explanatory hint below options
+          Tooltip(
+            message: 'Select either Reminder or Alarm. Both the options will provide a reminder/alert for your task.',
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 15,
+                    color: isDark
+                        ? AppColors.moonlightGrey
+                        : AppColors.lightTextSecondary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Select either Reminder or Alarm. Both the options will provide a reminder/alert for your task.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark
+                            ? AppColors.moonlightGrey
+                            : AppColors.lightTextSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -641,7 +791,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.moonlightGrey
+                  : AppColors.lightTextSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -652,7 +804,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               color: isDark ? AppColors.nebulaNavy : AppColors.lightCard,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? AppColors.nebulaNavyBorder : AppColors.lightBorder,
+                color: isDark
+                    ? AppColors.nebulaNavyBorder
+                    : AppColors.lightBorder,
               ),
             ),
             child: _isEditing
@@ -672,8 +826,12 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       color: _currentTask.description?.isNotEmpty == true
-                          ? (isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary)
-                          : (isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary),
+                          ? (isDark
+                                ? AppColors.starlightWhite
+                                : AppColors.lightTextPrimary)
+                          : (isDark
+                                ? AppColors.moonlightGrey
+                                : AppColors.lightTextSecondary),
                       height: 1.4,
                     ),
                   ),
@@ -687,14 +845,23 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: _deleteTask,
-                  icon: const Icon(Icons.delete_outline, color: AppColors.errorRed, size: 18),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.errorRed,
+                    size: 18,
+                  ),
                   label: const Text(
                     'Delete Task',
-                    style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: AppColors.errorRed,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: AppColors.errorRed),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
@@ -708,13 +875,21 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     size: 18,
                   ),
                   label: Text(
-                    _currentTask.isCompleted ? 'Mark Pending' : 'Mark Completed',
+                    _currentTask.isCompleted
+                        ? 'Mark Pending'
+                        : 'Mark Completed',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
-                    foregroundColor: isDark ? AppColors.cosmicBlack : Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    backgroundColor: isDark
+                        ? AppColors.pulsarCyan
+                        : AppColors.lightCyan,
+                    foregroundColor: isDark
+                        ? AppColors.cosmicBlack
+                        : Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     elevation: 0,
                   ),

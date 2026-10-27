@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:alarm/model/alarm_settings.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/app_control.dart';
 import '../../core/widgets/pulsar_logo.dart';
 import '../../services/alarm_service.dart';
+import 'widgets/dual_swipe_slider.dart';
 
 class AlarmRingScreen extends StatefulWidget {
   final AlarmSettings alarmSettings;
-  final VoidCallback? onDismissAndComplete;
+  final Future<void> Function()? onDismissAndComplete;
 
   const AlarmRingScreen({
     super.key,
@@ -21,6 +23,7 @@ class AlarmRingScreen extends StatefulWidget {
 class _AlarmRingScreenState extends State<AlarmRingScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
+  bool _isExiting = false;
 
   @override
   void initState() {
@@ -42,21 +45,46 @@ class _AlarmRingScreenState extends State<AlarmRingScreen>
     super.dispose();
   }
 
-  void _dismiss(BuildContext context) {
-    AlarmService.instance.stopRingingAlarm(widget.alarmSettings.id);
+  Future<void> _dismiss() async {
+    if (_isExiting) return;
+    _isExiting = true;
+    AlarmService.instance.isDismissingWithoutComplete = true;
+    await AlarmService.instance.stopRingingAlarm(
+      widget.alarmSettings.id,
+      markDone: false,
+    );
+    await _maybeCloseApp();
   }
 
-  void _dismissAndComplete(BuildContext context) {
-    widget.onDismissAndComplete?.call();
-    _dismiss(context);
+  Future<void> _dismissAndComplete() async {
+    if (_isExiting) return;
+    _isExiting = true;
+    if (widget.onDismissAndComplete != null) {
+      await widget.onDismissAndComplete!();
+    }
+    await AlarmService.instance.stopRingingAlarm(
+      widget.alarmSettings.id,
+      markDone: true,
+    );
+    await _maybeCloseApp();
   }
 
-  void _snooze(BuildContext context) {
-    AlarmService.instance.snoozeAlarm(
+  Future<void> _snooze() async {
+    if (_isExiting) return;
+    _isExiting = true;
+    await AlarmService.instance.snoozeAlarm(
       widget.alarmSettings.id,
       minutes: _snoozeMinutes,
       title: widget.alarmSettings.notificationSettings.title,
     );
+    await _maybeCloseApp();
+  }
+
+  Future<void> _maybeCloseApp() async {
+    if (AlarmService.instance.openedForAlarm) {
+      await AppControl.closeApp();
+      AlarmService.instance.openedForAlarm = false;
+    }
   }
 
   @override
@@ -173,94 +201,65 @@ class _AlarmRingScreenState extends State<AlarmRingScreen>
                   ],
                 ),
 
-                // Bottom Action Buttons
+                // Interactive Dual-Directional Swipe Slider
                 Column(
                   children: [
-                    // Dismiss and complete task button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.check_circle_outline, color: Colors.black, size: 22),
-                        label: const Text(
-                          'Dismiss & Mark as Done',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.pulsarCyan,
-                          elevation: 6,
-                          shadowColor: AppColors.pulsarCyan.withValues(alpha: 0.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        onPressed: () => _dismissAndComplete(context),
-                      ),
+                    DualSwipeSlider(
+                      snoozeMinutes: _snoozeMinutes,
+                      onSwipeRight: () => _dismissAndComplete(),
+                      onSwipeLeft: () => _snooze(),
                     ),
-                    const SizedBox(height: 14),
-
-                    // Dismiss only & Snooze row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 48,
-                            child: OutlinedButton.icon(
-                              icon: const Icon(Icons.close_rounded,
-                                  color: AppColors.moonlightGrey, size: 20),
-                              label: const Text(
-                                'Dismiss',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                              ),
-                              onPressed: () => _dismiss(context),
+                    const SizedBox(height: 18),
+                    // High-contrast, clearly visible button to dismiss without marking done
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _dismiss(),
+                        borderRadius: BorderRadius.circular(24),
+                        splashColor: Colors.white.withValues(alpha: 0.1),
+                        highlightColor: Colors.white.withValues(alpha: 0.05),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.nebulaNavy,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: AppColors.moonlightGrey.withValues(alpha: 0.4),
+                              width: 1.2,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(
+                                Icons.close_rounded,
+                                size: 18,
+                                color: AppColors.starlightWhite,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Dismiss without completing',
+                                style: TextStyle(
+                                  color: AppColors.starlightWhite,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: SizedBox(
-                            height: 48,
-                            child: ElevatedButton.icon(
-                              icon: const Icon(Icons.snooze_rounded,
-                                  color: Colors.white, size: 20),
-                              label: Text(
-                                'Snooze ${_snoozeMinutes}m',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.nebulaNavy,
-                                side: BorderSide(
-                                  color: AppColors.nebulaViolet.withValues(alpha: 0.5),
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                              ),
-                              onPressed: () => _snooze(context),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),

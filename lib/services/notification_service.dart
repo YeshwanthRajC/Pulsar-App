@@ -24,8 +24,11 @@ Future<void> handleAlarmNotificationResponse(NotificationResponse r) async {
   if (id == null) return;
 
   final action = r.actionId;
-  // Plain tap on the body just opens the app (ring screen shows automatically).
-  if (action == null || action.isEmpty) return;
+  // Plain tap on the body opens the app (ring screen shows automatically).
+  if (action == null || action.isEmpty) {
+    AlarmService.instance.openedForAlarm = true;
+    return;
+  }
 
   await NotificationService.instance.initialize();
   await AlarmService.instance.initialize();
@@ -108,7 +111,40 @@ class NotificationService {
             alarmNotificationBackgroundHandler,
       );
 
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        final androidImpl = _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+        if (androidImpl != null) {
+          await androidImpl.createNotificationChannel(
+            const AndroidNotificationChannel(
+              'pulsar_alarm_actions',
+              'Alarm Actions',
+              description: 'Quick actions and alerts for ringing task alarms',
+              importance: Importance.max,
+              enableVibration: true,
+              enableLights: true,
+              playSound: true,
+            ),
+          );
+        }
+      }
+
       _initialized = true;
+
+      try {
+        final launchDetails =
+            await _notificationsPlugin.getNotificationAppLaunchDetails();
+        if (launchDetails != null && launchDetails.didNotificationLaunchApp) {
+          final payload = launchDetails.notificationResponse?.payload;
+          if (payload != null && payload.startsWith('alarm:')) {
+            final action = launchDetails.notificationResponse?.actionId;
+            if (action == null || action.isEmpty) {
+              AlarmService.instance.openedForAlarm = true;
+            }
+          }
+        }
+      } catch (_) {}
       // NOTE: system permissions are intentionally NOT requested here; they are
       // requested exactly once on first launch (see main.dart).
     } catch (e) {
@@ -207,45 +243,10 @@ class NotificationService {
     }
   }
 
-  /// Schedules a companion notification at alarm time with action buttons
-  /// (Dismiss & Mark Done / Dismiss / Snooze) that work without opening the app.
+  /// Deprecated companion notification scheduler. Replaced by the single
+  /// alarm notification from AlarmService. Kept as no-op for backward compatibility.
   Future<void> scheduleAlarmCompanion(int taskId, String title, DateTime at) async {
-    if (!_initialized || kIsWeb) return;
-    try {
-      final snoozeMin = await AlarmService.instance.getSnoozeMinutes();
-      final details = NotificationDetails(
-        android: AndroidNotificationDetails(
-          'pulsar_alarm_actions',
-          'Alarm Actions',
-          channelDescription: 'Quick actions for ringing task alarms',
-          importance: Importance.max,
-          priority: Priority.max,
-          category: AndroidNotificationCategory.alarm,
-          fullScreenIntent: false,
-          autoCancel: true,
-          timeoutAfter: 600000,
-          actions: <AndroidNotificationAction>[
-            AndroidNotificationAction(kAlarmActionDone, 'Dismiss & Done',
-                cancelNotification: true),
-            AndroidNotificationAction(kAlarmActionDismiss, 'Dismiss',
-                cancelNotification: true),
-            AndroidNotificationAction(kAlarmActionSnooze, 'Snooze ${snoozeMin}m',
-                cancelNotification: true),
-          ],
-        ),
-      );
-      await _notificationsPlugin.zonedSchedule(
-        id: kAlarmCompanionOffset + taskId,
-        title: '⏰ $title',
-        body: 'Alarm ringing • choose an action',
-        scheduledDate: tz.TZDateTime.from(at, tz.UTC),
-        notificationDetails: details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        payload: 'alarm:$taskId|$title',
-      );
-    } catch (e) {
-      debugPrint('Error scheduling alarm companion: $e');
-    }
+    // Single alarm notification is now handled directly by AlarmService.
   }
 
   Future<void> cancelAlarmCompanion(int taskId) async {

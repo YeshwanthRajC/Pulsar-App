@@ -146,12 +146,14 @@ class CreateTaskTool extends BaseTool {
         cleanTitle = cleanTitle[0].toUpperCase() + cleanTitle.substring(1);
       }
 
-      final hasReminder = item['hasReminder'] as bool? ?? (parsedTime != null);
-      final hasAlarm = item['hasAlarm'] as bool? ??
+      final rawHasAlarm = item['hasAlarm'] as bool? ??
           (item['isAlarm'] as bool? ??
               (title.toLowerCase().contains('alarm') ||
                   title.toLowerCase().contains('wake me up') ||
                   title.toLowerCase().contains('wake up')));
+      final rawHasReminder = item['hasReminder'] as bool? ?? (parsedTime != null);
+      final hasAlarm = rawHasAlarm;
+      final hasReminder = hasAlarm ? false : rawHasReminder;
       final description = item['description'] as String?;
 
       final task = Task(

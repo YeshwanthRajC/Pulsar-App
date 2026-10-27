@@ -1,10 +1,14 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:alarm/alarm.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
+
 import '../../models/task_model.dart';
+import '../data/repositories/task_repository.dart';
 import 'notification_service.dart';
+
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
 /// Offset for the Android AlarmManager ids used for ring-timeout events.
@@ -28,6 +32,22 @@ class AlarmService {
   StreamSubscription? _ringSubscription;
   final ValueNotifier<AlarmSettings?> ringingAlarmNotifier =
       ValueNotifier<AlarmSettings?>(null);
+
+  /// Tracks alarms stopped programmatically from within Dart (e.g. from UI buttons,
+  /// timeout, or snooze) so that notification action button clicks can be distinguished
+  /// and mark the task as done.
+  final Set<int> _programmaticallyStoppedAlarms = {};
+  final Set<int> _recentlyCompletedTaskIds = {};
+
+  /// Flag set when the user explicitly chooses 'Dismiss without completing' in the Alarm UI.
+  bool isDismissingWithoutComplete = false;
+
+  /// True if the current alarm was entered from outside the app (e.g. from
+  /// clicking the notification bar or launched while an alarm is ringing).
+  bool openedForAlarm = false;
+
+  /// Tracks whether the app was in the foreground before the current alarm started.
+  bool appInForeground = false;
 
   AlarmService._init();
 
@@ -101,8 +121,35 @@ class AlarmService {
     if (remaining.isNegative) remaining = Duration.zero;
     _autoStopTimer = Timer(remaining, () {
       debugPrint('[AlarmService] Ring timeout reached for #${settings.id}');
-      stopRingingAlarm(settings.id);
+      _programmaticallyStoppedAlarms.add(settings.id);
+      stopRingingAlarm(settings.id, markDone: false);
+      Future.delayed(const Duration(milliseconds: 600), () {
+        _programmaticallyStoppedAlarms.remove(settings.id);
+      });
     });
+  }
+
+  Future<void> _markTaskDone(int taskId) async {
+    if (_recentlyCompletedTaskIds.contains(taskId)) return;
+    _recentlyCompletedTaskIds.add(taskId);
+    Future.delayed(const Duration(seconds: 3), () {
+      _recentlyCompletedTaskIds.remove(taskId);
+    });
+
+    try {
+      final repo = TaskRepository();
+      final task = await repo.getTaskById(taskId);
+      if (task != null && !task.isCompleted) {
+        await repo.updateTask(task.copyWith(
+          isCompleted: true,
+          completedAt: DateTime.now(),
+        ));
+        debugPrint('[AlarmService] Task #$taskId successfully marked completed.');
+        NotificationService.instance.onExternalChange?.call();
+      }
+    } catch (e) {
+      debugPrint('[AlarmService] Error marking task #$taskId done: $e');
+    }
   }
 
   bool get isInitialized => _initialized;
@@ -125,22 +172,42 @@ class AlarmService {
 
       // Listen to ringing alarms
       _ringSubscription?.cancel();
-      _ringSubscription = Alarm.ringing.listen((alarmSet) {
+      _ringSubscription = Alarm.ringing.listen((alarmSet) async {
         if (alarmSet.alarms.isNotEmpty) {
           final settings = alarmSet.alarms.first;
-          debugPrint('[AlarmService] Alarm ringing: ${settings.id} - ${settings.notificationSettings.title}');
+          debugPrint(
+            '[AlarmService] Alarm ringing: ${settings.id} - ${settings.notificationSettings.title}',
+          );
+          if (!appInForeground) {
+            openedForAlarm = true;
+          }
           ringingAlarmNotifier.value = settings;
           _armAutoStop(settings);
         } else {
           _autoStopTimer?.cancel();
+          final previousAlarm = ringingAlarmNotifier.value;
           ringingAlarmNotifier.value = null;
+
+          if (previousAlarm != null) {
+            final taskId = previousAlarm.id;
+            if (!_programmaticallyStoppedAlarms.contains(taskId) &&
+                !isDismissingWithoutComplete) {
+              debugPrint(
+                '[AlarmService] Alarm #$taskId stopped via notification action -> marking task done',
+              );
+              await _markTaskDone(taskId);
+            }
+          }
+          isDismissingWithoutComplete = false;
         }
       });
 
       await syncRingingState();
       debugPrint('[AlarmService] Alarm engine initialized successfully');
     } catch (e) {
-      debugPrint('[AlarmService] Initialization failed (platform might not support alarm): $e');
+      debugPrint(
+        '[AlarmService] Initialization failed (platform might not support alarm): $e',
+      );
     }
   }
 
@@ -159,6 +226,9 @@ class AlarmService {
       }
       ringingAlarmNotifier.value = ringing;
       if (ringing != null) {
+        if (!appInForeground) {
+          openedForAlarm = true;
+        }
         _armAutoStop(ringing);
       } else {
         _autoStopTimer?.cancel();
@@ -200,7 +270,9 @@ class AlarmService {
 
       // Only schedule future alarms
       if (alarmDateTime.isBefore(DateTime.now())) {
-        debugPrint('[AlarmService] Alarm time ${task.dueTime} is in past, skipping');
+        debugPrint(
+          '[AlarmService] Alarm time ${task.dueTime} is in past, skipping',
+        );
         return;
       }
 
@@ -216,9 +288,8 @@ class AlarmService {
         ),
         notificationSettings: NotificationSettings(
           title: '⏰ Alarm: ${task.title}',
-          body: 'Pulsar Alarm • Tap to dismiss or snooze',
+          body: 'Click the notification for other options',
           stopButton: 'Dismiss',
-
         ),
         androidFullScreenIntent: true,
         androidStopAlarmOnTermination: false,
@@ -227,17 +298,22 @@ class AlarmService {
 
       await Alarm.set(alarmSettings: alarmSettings);
       await _scheduleNativeTimeout(task.id!, alarmDateTime);
-      await NotificationService.instance
-          .scheduleAlarmCompanion(task.id!, task.title, alarmDateTime);
-      debugPrint('[AlarmService] Scheduled alarm #${task.id} for $alarmDateTime');
+      // Clean any old companion notification so only single alarm notification shows
+      await NotificationService.instance.cancelAlarmCompanion(task.id!);
+      debugPrint(
+        '[AlarmService] Scheduled alarm #${task.id} for $alarmDateTime',
+      );
     } catch (e) {
-      debugPrint('[AlarmService] Failed to schedule alarm for task #${task.id}: $e');
+      debugPrint(
+        '[AlarmService] Failed to schedule alarm for task #${task.id}: $e',
+      );
     }
   }
 
   /// Cancels an active or scheduled alarm for a task.
   Future<void> cancelTaskAlarm(int taskId) async {
     if (!_initialized || kIsWeb) return;
+    _programmaticallyStoppedAlarms.add(taskId);
     try {
       await Alarm.stop(taskId);
       await _cancelNativeTimeout(taskId);
@@ -248,12 +324,17 @@ class AlarmService {
       debugPrint('[AlarmService] Cancelled alarm for task #$taskId');
     } catch (e) {
       debugPrint('[AlarmService] Error cancelling alarm #$taskId: $e');
+    } finally {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        _programmaticallyStoppedAlarms.remove(taskId);
+      });
     }
   }
 
   /// Snoozes an active alarm for [minutes] minutes.
   Future<void> snoozeAlarm(int taskId, {int? minutes, String? title}) async {
     if (!_initialized || kIsWeb) return;
+    _programmaticallyStoppedAlarms.add(taskId);
     try {
       await Alarm.stop(taskId);
       await _cancelNativeTimeout(taskId);
@@ -279,7 +360,7 @@ class AlarmService {
         ),
         notificationSettings: NotificationSettings(
           title: '⏰ Snoozed: ${title ?? "Task Alarm"}',
-          body: 'Pulsar Alarm • Due now',
+          body: 'Click the notification for other options',
           stopButton: 'Dismiss',
         ),
         androidFullScreenIntent: true,
@@ -289,17 +370,29 @@ class AlarmService {
 
       await Alarm.set(alarmSettings: alarmSettings);
       await _scheduleNativeTimeout(taskId, snoozeTime);
-      await NotificationService.instance.scheduleAlarmCompanion(
-          taskId, title ?? 'Task Alarm', snoozeTime);
       debugPrint('[AlarmService] Snoozed alarm #$taskId to $snoozeTime');
     } catch (e) {
       debugPrint('[AlarmService] Error snoozing alarm #$taskId: $e');
+    } finally {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        _programmaticallyStoppedAlarms.remove(taskId);
+      });
     }
   }
 
   /// Stops an actively ringing alarm.
-  Future<void> stopRingingAlarm(int taskId) async {
-    await cancelTaskAlarm(taskId);
+  Future<void> stopRingingAlarm(int taskId, {bool markDone = false}) async {
+    _programmaticallyStoppedAlarms.add(taskId);
+    try {
+      await cancelTaskAlarm(taskId);
+      if (markDone) {
+        await _markTaskDone(taskId);
+      }
+    } finally {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        _programmaticallyStoppedAlarms.remove(taskId);
+      });
+    }
   }
 
   /// Cancels all scheduled alarms in the system.

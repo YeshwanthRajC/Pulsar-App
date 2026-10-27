@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../calendar/calendar_view.dart';
 import '../add_task/add_task_screen.dart';
+import '../alarm/widgets/alarm_tutorial_dialog.dart';
+import '../../services/preferences_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,6 +13,27 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAlarmTutorial();
+    });
+  }
+
+  Future<void> _checkAlarmTutorial() async {
+    final prefs = await PreferencesService.getInstance();
+    if (!prefs.alarmTutorialShown && mounted) {
+      await prefs.setAlarmTutorialShown(true);
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const AlarmTutorialDialog(),
+        );
+      }
+    }
+  }
 
   void _openAddTask(BuildContext context, {int initialTab = 0}) {
     Navigator.of(context).push(

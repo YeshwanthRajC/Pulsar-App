@@ -39,4 +39,9 @@ class PreferencesService {
   bool get permissionsRequested => _prefs.getBool(_keyPermissionsRequested) ?? false;
   Future<void> setPermissionsRequested(bool value) async =>
       await _prefs.setBool(_keyPermissionsRequested, value);
+
+  static const String _keyAlarmTutorialShown = 'alarm_tutorial_shown';
+  bool get alarmTutorialShown => _prefs.getBool(_keyAlarmTutorialShown) ?? false;
+  Future<void> setAlarmTutorialShown(bool value) async =>
+      await _prefs.setBool(_keyAlarmTutorialShown, value);
 }

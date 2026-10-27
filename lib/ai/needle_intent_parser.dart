@@ -415,12 +415,13 @@ class NeedleIntentParser {
 
     final hasAlarm = input.toLowerCase().contains('alarm') ||
         input.toLowerCase().contains('wake');
+    final effectiveReminder = !hasAlarm && (hasReminder || (parsedTime != null));
 
     return {
       'title': cleanTitle,
       'dueDate': datePhrase,
       'dueTime': parsedTime,
-      'hasReminder': hasReminder || (parsedTime != null),
+      'hasReminder': effectiveReminder,
       'hasAlarm': hasAlarm,
       'description': null,
     };

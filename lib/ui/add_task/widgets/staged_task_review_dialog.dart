@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../models/task_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/date_utils.dart';
@@ -46,7 +47,9 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
       controller.dispose();
     }
     _editableTasks = List<Task>.from(widget.tasks);
-    _titleControllers = _editableTasks.map((t) => TextEditingController(text: t.title)).toList();
+    _titleControllers = _editableTasks
+        .map((t) => TextEditingController(text: t.title))
+        .toList();
   }
 
   @override
@@ -124,10 +127,7 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
       final formatted = _formatTimeOfDay(picked);
       _updateTask(
         index,
-        current.copyWith(
-          dueTime: formatted,
-          hasReminder: true,
-        ),
+        current.copyWith(dueTime: formatted, hasReminder: !current.hasAlarm),
       );
     }
   }
@@ -164,27 +164,18 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
     );
 
     if (picked != null) {
-      _updateTask(
-        index,
-        current.copyWith(dueDate: picked),
-      );
+      _updateTask(index, current.copyWith(dueDate: picked));
     }
   }
 
   void _quickSetTime(int index, String? timeStr) {
     final current = _editableTasks[index];
     if (timeStr == null) {
-      _updateTask(
-        index,
-        current.copyWith(clearDueTime: true),
-      );
+      _updateTask(index, current.copyWith(clearDueTime: true));
     } else {
       _updateTask(
         index,
-        current.copyWith(
-          dueTime: timeStr,
-          hasReminder: true,
-        ),
+        current.copyWith(dueTime: timeStr, hasReminder: !current.hasAlarm),
       );
     }
   }
@@ -192,15 +183,9 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
   void _quickSetDate(int index, DateTime? date) {
     final current = _editableTasks[index];
     if (date == null) {
-      _updateTask(
-        index,
-        current.copyWith(clearDueDate: true),
-      );
+      _updateTask(index, current.copyWith(clearDueDate: true));
     } else {
-      _updateTask(
-        index,
-        current.copyWith(dueDate: date),
-      );
+      _updateTask(index, current.copyWith(dueDate: date));
     }
   }
 
@@ -248,7 +233,11 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.auto_awesome, color: AppColors.pulsarCyan, size: 14),
+                const Icon(
+                  Icons.auto_awesome,
+                  color: AppColors.pulsarCyan,
+                  size: 14,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   _editableTasks.length > 1
@@ -272,7 +261,9 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
-              color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+              color: isDark
+                  ? AppColors.starlightWhite
+                  : AppColors.lightTextPrimary,
             ),
           ),
 
@@ -282,7 +273,9 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
             'Review AI suggestions below. Tap any field to modify before saving.',
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.moonlightGrey
+                  : AppColors.lightTextSecondary,
             ),
           ),
 
@@ -307,11 +300,17 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
                     child: Text('Discard'),
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+                    foregroundColor: isDark
+                        ? AppColors.moonlightGrey
+                        : AppColors.lightTextSecondary,
                     side: BorderSide(
-                      color: isDark ? AppColors.nebulaNavyBorder : AppColors.lightBorder,
+                      color: isDark
+                          ? AppColors.nebulaNavyBorder
+                          : AppColors.lightBorder,
                     ),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
@@ -354,15 +353,23 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
                         _editableTasks.length > 1
                             ? 'Confirm & Save All (${_editableTasks.length})'
                             : 'Confirm & Save Task',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       foregroundColor: AppColors.cosmicBlack,
                       shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 8,
+                      ),
                     ),
                   ),
                 ),
@@ -401,28 +408,39 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
                   onChanged: (newTitle) {
                     _updateTask(
                       index,
-                      task.copyWith(title: newTitle.trim().isEmpty ? task.title : newTitle),
+                      task.copyWith(
+                        title: newTitle.trim().isEmpty ? task.title : newTitle,
+                      ),
                     );
                   },
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+                    color: isDark
+                        ? AppColors.starlightWhite
+                        : AppColors.lightTextPrimary,
                   ),
                   decoration: InputDecoration(
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                     hintText: 'Task Title',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFCBD5E1),
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFCBD5E1),
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -438,7 +456,11 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
               if (_editableTasks.length > 1) ...[
                 const SizedBox(width: 4),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.errorRed),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    size: 20,
+                    color: AppColors.errorRed,
+                  ),
                   tooltip: 'Remove Task Draft',
                   onPressed: () {
                     if (widget.onTaskRemoved != null) {
@@ -466,14 +488,19 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
                   onTap: () => _pickDate(index, context),
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark ? const Color(0xFF1E293B) : Colors.white,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: task.dueDate != null
                             ? AppColors.pulsarCyan.withValues(alpha: 0.5)
-                            : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                            : (isDark
+                                  ? const Color(0xFF334155)
+                                  : const Color(0xFFCBD5E1)),
                       ),
                     ),
                     child: Row(
@@ -484,18 +511,26 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
                           size: 14,
                           color: task.dueDate != null
                               ? AppColors.pulsarCyan
-                              : (isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary),
+                              : (isDark
+                                    ? AppColors.moonlightGrey
+                                    : AppColors.lightTextSecondary),
                         ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             task.dueDate != null
-                                ? AppDateUtils.shortDateFormat.format(task.dueDate!)
+                                ? AppDateUtils.shortDateFormat.format(
+                                    task.dueDate!,
+                                  )
                                 : 'No date',
                             style: TextStyle(
                               fontSize: 12,
-                              fontWeight: task.dueDate != null ? FontWeight.w600 : FontWeight.normal,
-                              color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+                              fontWeight: task.dueDate != null
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                              color: isDark
+                                  ? AppColors.starlightWhite
+                                  : AppColors.lightTextPrimary,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -503,7 +538,9 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
                         Icon(
                           Icons.arrow_drop_down,
                           size: 16,
-                          color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+                          color: isDark
+                              ? AppColors.moonlightGrey
+                              : AppColors.lightTextSecondary,
                         ),
                       ],
                     ),
@@ -519,14 +556,19 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
                   onTap: () => _pickTime(index, context),
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark ? const Color(0xFF1E293B) : Colors.white,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: task.dueTime != null
                             ? AppColors.pulsarCyan.withValues(alpha: 0.5)
-                            : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                            : (isDark
+                                  ? const Color(0xFF334155)
+                                  : const Color(0xFFCBD5E1)),
                       ),
                     ),
                     child: Row(
@@ -537,7 +579,9 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
                           size: 14,
                           color: task.dueTime != null
                               ? AppColors.pulsarCyan
-                              : (isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary),
+                              : (isDark
+                                    ? AppColors.moonlightGrey
+                                    : AppColors.lightTextSecondary),
                         ),
                         const SizedBox(width: 6),
                         Expanded(
@@ -545,8 +589,12 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
                             task.dueTime ?? 'Set time',
                             style: TextStyle(
                               fontSize: 12,
-                              fontWeight: task.dueTime != null ? FontWeight.w600 : FontWeight.normal,
-                              color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+                              fontWeight: task.dueTime != null
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                              color: isDark
+                                  ? AppColors.starlightWhite
+                                  : AppColors.lightTextPrimary,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -554,7 +602,9 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
                         Icon(
                           Icons.arrow_drop_down,
                           size: 16,
-                          color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+                          color: isDark
+                              ? AppColors.moonlightGrey
+                              : AppColors.lightTextSecondary,
                         ),
                       ],
                     ),
@@ -575,15 +625,24 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
               // Quick Date Shortcuts
               _buildSmallChip(
                 label: 'Today',
-                isSelected: task.dueDate != null && AppDateUtils.isSameDay(task.dueDate!, DateTime.now()),
+                isSelected:
+                    task.dueDate != null &&
+                    AppDateUtils.isSameDay(task.dueDate!, DateTime.now()),
                 onTap: () => _quickSetDate(index, DateTime.now()),
                 isDark: isDark,
               ),
               _buildSmallChip(
                 label: 'Tomorrow',
-                isSelected: task.dueDate != null &&
-                    AppDateUtils.isSameDay(task.dueDate!, DateTime.now().add(const Duration(days: 1))),
-                onTap: () => _quickSetDate(index, DateTime.now().add(const Duration(days: 1))),
+                isSelected:
+                    task.dueDate != null &&
+                    AppDateUtils.isSameDay(
+                      task.dueDate!,
+                      DateTime.now().add(const Duration(days: 1)),
+                    ),
+                onTap: () => _quickSetDate(
+                  index,
+                  DateTime.now().add(const Duration(days: 1)),
+                ),
                 isDark: isDark,
               ),
               // Quick Time Shortcuts - e.g. change 7:00 PM to 9:00 PM or custom hours
@@ -625,7 +684,7 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
 
           const SizedBox(height: 10),
 
-          // Reminder & Alarm Toggle Cards (Responsive, compact, no overflow)
+          // Reminder & Alarm Toggle Cards (Responsive, compact, no overflow, mutually exclusive)
           Row(
             children: [
               // Reminder Toggle Card
@@ -639,7 +698,10 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
                   onChanged: (val) {
                     _updateTask(
                       index,
-                      task.copyWith(hasReminder: val),
+                      task.copyWith(
+                        hasReminder: val,
+                        hasAlarm: val ? false : task.hasAlarm,
+                      ),
                     );
                   },
                   isDark: isDark,
@@ -655,17 +717,53 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
                   activeIcon: Icons.alarm,
                   inactiveIcon: Icons.alarm_off,
                   value: task.hasAlarm,
-                  activeColor: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
+                  activeColor: isDark
+                      ? AppColors.pulsarCyan
+                      : AppColors.lightCyan,
                   onChanged: (val) {
                     _updateTask(
                       index,
-                      task.copyWith(hasAlarm: val),
+                      task.copyWith(
+                        hasAlarm: val,
+                        hasReminder: val ? false : task.hasReminder,
+                      ),
                     );
                   },
                   isDark: isDark,
                 ),
               ),
             ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // Tooltip / Explanatory hint below options
+          Tooltip(
+            message: 'Select either Reminder or Alarm. Both the options will provide a reminder/alert for your task.',
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 13,
+                  color: isDark
+                      ? AppColors.moonlightGrey
+                      : AppColors.lightTextSecondary,
+                ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    'Select either Reminder or Alarm. Both the options will provide a reminder/alert for your task.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark
+                          ? AppColors.moonlightGrey
+                          : AppColors.lightTextSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -687,7 +785,7 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
         onTap: () => onChanged(!value),
         borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
           decoration: BoxDecoration(
             color: value
                 ? activeColor.withValues(alpha: isDark ? 0.12 : 0.08)
@@ -696,7 +794,9 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
             border: Border.all(
               color: value
                   ? activeColor.withValues(alpha: 0.5)
-                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                  : (isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0)),
               width: value ? 1.2 : 1.0,
             ),
           ),
@@ -704,25 +804,27 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
             children: [
               Icon(
                 value ? activeIcon : inactiveIcon,
-                size: 16,
+                size: 15,
                 color: value ? activeColor : AppColors.moonlightGrey,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                     color: value
-                        ? (isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary)
+                        ? (isDark
+                              ? AppColors.starlightWhite
+                              : AppColors.lightTextPrimary)
                         : AppColors.moonlightGrey,
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               _buildMiniSwitch(
                 value: value,
                 activeColor: activeColor,
@@ -743,8 +845,8 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeInOut,
-      width: 32,
-      height: 18,
+      width: 28,
+      height: 16,
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
@@ -757,8 +859,8 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
         curve: Curves.easeInOut,
         alignment: value ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
-          width: 14,
-          height: 14,
+          width: 12,
+          height: 12,
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.white,
@@ -783,7 +885,8 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
     Color? accentColor,
     bool isDestructive = false,
   }) {
-    final effectiveColor = accentColor ?? (isDark ? AppColors.pulsarCyan : AppColors.lightCyan);
+    final effectiveColor =
+        accentColor ?? (isDark ? AppColors.pulsarCyan : AppColors.lightCyan);
 
     return InkWell(
       onTap: onTap,
@@ -799,8 +902,10 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
             color: isSelected
                 ? effectiveColor
                 : (isDestructive
-                    ? AppColors.errorRed.withValues(alpha: 0.3)
-                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+                      ? AppColors.errorRed.withValues(alpha: 0.3)
+                      : (isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0))),
           ),
         ),
         child: Text(
@@ -811,8 +916,10 @@ class _StagedTaskReviewDialogState extends State<StagedTaskReviewDialog> {
             color: isSelected
                 ? effectiveColor
                 : (isDestructive
-                    ? AppColors.errorRed
-                    : (isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary)),
+                      ? AppColors.errorRed
+                      : (isDark
+                            ? AppColors.moonlightGrey
+                            : AppColors.lightTextSecondary)),
           ),
         ),
       ),

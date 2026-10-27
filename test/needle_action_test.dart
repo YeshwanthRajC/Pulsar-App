@@ -441,7 +441,8 @@ void main() {
       expect(task['title'], equals('Go to Temple'));
       expect(task['dueDate'], equals('tomorrow'));
       expect(task['dueTime'], equals('10:00 AM'));
-      expect(task['hasReminder'], isTrue);
+      expect(task['hasAlarm'], isTrue);
+      expect(task['hasReminder'], isFalse);
     });
   });
 }

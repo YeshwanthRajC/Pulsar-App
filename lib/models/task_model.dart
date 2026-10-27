@@ -20,13 +20,14 @@ class Task {
     this.description,
     this.dueDate,
     this.dueTime,
-    this.hasReminder = true,
+    bool hasReminder = true,
     this.hasAlarm = false,
     this.isCompleted = false,
     DateTime? createdAt,
     this.completedAt,
     this.accentColor = 'cyan',
-  }) : createdAt = createdAt ?? DateTime.now();
+  })  : hasReminder = hasAlarm ? false : hasReminder,
+        createdAt = createdAt ?? DateTime.now();
 
   Task copyWith({
     int? id,
@@ -43,14 +44,26 @@ class Task {
     bool clearDueDate = false,
     bool clearDueTime = false,
   }) {
+    bool nextAlarm = hasAlarm ?? this.hasAlarm;
+    bool nextReminder = hasReminder ?? this.hasReminder;
+
+    // Mutual exclusion: turning one on turns the other off
+    if (hasAlarm == true && hasReminder == null) {
+      nextReminder = false;
+    } else if (hasReminder == true && hasAlarm == null) {
+      nextAlarm = false;
+    } else if (nextAlarm && nextReminder) {
+      nextReminder = false;
+    }
+
     return Task(
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
       dueDate: clearDueDate ? null : (dueDate ?? this.dueDate),
       dueTime: clearDueTime ? null : (dueTime ?? this.dueTime),
-      hasReminder: hasReminder ?? this.hasReminder,
-      hasAlarm: hasAlarm ?? this.hasAlarm,
+      hasReminder: nextReminder,
+      hasAlarm: nextAlarm,
       isCompleted: isCompleted ?? this.isCompleted,
       createdAt: createdAt ?? this.createdAt,
       completedAt: completedAt ?? this.completedAt,
@@ -75,6 +88,8 @@ class Task {
   }
 
   factory Task.fromMap(Map<String, dynamic> map) {
+    final rawAlarm = (map['has_alarm'] as int? ?? 0) == 1;
+    final rawReminder = (map['has_reminder'] as int? ?? 1) == 1;
     return Task(
       id: map['id'] as int?,
       title: map['title'] as String,
@@ -83,8 +98,8 @@ class Task {
           ? DateTime.tryParse(map['due_date'] as String)
           : null,
       dueTime: map['due_time'] as String?,
-      hasReminder: (map['has_reminder'] as int? ?? 1) == 1,
-      hasAlarm: (map['has_alarm'] as int? ?? 0) == 1,
+      hasReminder: rawAlarm ? false : rawReminder,
+      hasAlarm: rawAlarm,
       isCompleted: (map['is_completed'] as int? ?? 0) == 1,
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'] as String) ?? DateTime.now()

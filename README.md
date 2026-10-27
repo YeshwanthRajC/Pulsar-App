@@ -36,6 +36,11 @@
 4. **Dual Alert System: Reminders & Loud Alarms**
    - **Notification Service**: Standard Android notification channel scheduling exact notification reminders.
    - **Alarm Service & Ring Screen**: Built-in `AlarmService` and full-screen `AlarmRingScreen` for loud, high-priority audio alarms when critical tasks are due.
+   - **Mutual Exclusion & Explanatory Tip**: Reminders and Alarms are single-selection so users never receive dual alerts for the same task, paired with a helpful explanatory tooltip below the controls across voice staging, manual creation, and task editing.
+   - **Dual-Directional Swipe Slider**: The alarm ringing screen features a responsive bidirectional slider — **Swipe Right 👉** to dismiss and mark the task as completed in SQLite, **Swipe Left 👈** to snooze for the configured duration.
+   - **Seamless App Exit from Notifications**: Tapping the alarm notification outside the app opens straight to the alarm controls. Taking action (snooze or dismiss) immediately closes the UI and returns you to your previous screen without ever diverting or opening into the main app.
+   - **Customizable Duration & OS-Level Auto-Stop**: Choose your Ring Duration (3–15 min) and Snooze Time (5–30 min) in Settings. System alarms ensure ringing stops after the timeout even if the app process was terminated.
+   - **First-Launch Guide**: A one-time tutorial dialog on installation introduces the swipe controls and customization options.
    - **One-Tap Notification Pause/Resume**: Global bell toggle on the home calendar to pause or resume alerts without losing individual task schedules.
 5. **Strict Action Modules Architecture**
    - Needle interacts exclusively through discrete tool-calling modules (`retrieve_tasks`, `create_task`, `update_task`, `delete_task`, `request_clarification`, `task_summary`).
@@ -59,7 +64,7 @@
 
 The final production-ready APK is pre-compiled for Android (ARM64) with native on-device AI models embedded:
 
-https://drive.google.com/file/d/1KnjmGvPPN9psraNu4fas5ln_X8EUUApF/view?usp=sharing
+https://drive.google.com/file/d/1TsmaJioYdba1ShAIshrGssFSBOh2UyJu/view?usp=sharing
 
 ---
 

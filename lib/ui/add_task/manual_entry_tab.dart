@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import '../../models/task_model.dart';
 import '../../providers/task_provider.dart';
 import '../../core/constants/app_colors.dart';
@@ -9,10 +10,7 @@ import '../../core/utils/date_utils.dart';
 class ManualEntryTab extends StatefulWidget {
   final VoidCallback onTaskSaved;
 
-  const ManualEntryTab({
-    super.key,
-    required this.onTaskSaved,
-  });
+  const ManualEntryTab({super.key, required this.onTaskSaved});
 
   @override
   State<ManualEntryTab> createState() => _ManualEntryTabState();
@@ -94,7 +92,9 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
 
     final task = Task(
       title: title,
-      description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
+      description: _descController.text.trim().isEmpty
+          ? null
+          : _descController.text.trim(),
       dueDate: _selectedDate,
       dueTime: _formatTimeOfDay(_selectedTime),
       hasReminder: _hasReminder,
@@ -119,7 +119,9 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+            color: isDark
+                ? AppColors.starlightWhite
+                : AppColors.lightTextPrimary,
           ),
         ),
         const SizedBox(height: 8),
@@ -138,16 +140,16 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+            color: isDark
+                ? AppColors.starlightWhite
+                : AppColors.lightTextPrimary,
           ),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _descController,
           maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Add more details...',
-          ),
+          decoration: const InputDecoration(hintText: 'Add more details...'),
         ),
 
         const SizedBox(height: 18),
@@ -158,7 +160,9 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
             color: isDark ? AppColors.nebulaNavy : AppColors.lightCard,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? AppColors.nebulaNavyBorder : AppColors.lightBorder,
+              color: isDark
+                  ? AppColors.nebulaNavyBorder
+                  : AppColors.lightBorder,
             ),
           ),
           child: Material(
@@ -172,7 +176,9 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
                 'Date',
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.moonlightGrey
+                      : AppColors.lightTextSecondary,
                 ),
               ),
               subtitle: Text(
@@ -180,7 +186,9 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+                  color: isDark
+                      ? AppColors.starlightWhite
+                      : AppColors.lightTextPrimary,
                 ),
               ),
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
@@ -197,7 +205,9 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
             color: isDark ? AppColors.nebulaNavy : AppColors.lightCard,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? AppColors.nebulaNavyBorder : AppColors.lightBorder,
+              color: isDark
+                  ? AppColors.nebulaNavyBorder
+                  : AppColors.lightBorder,
             ),
           ),
           child: Material(
@@ -211,7 +221,9 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
                 'Time',
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.moonlightGrey
+                      : AppColors.lightTextSecondary,
                 ),
               ),
               subtitle: Text(
@@ -219,7 +231,9 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+                  color: isDark
+                      ? AppColors.starlightWhite
+                      : AppColors.lightTextPrimary,
                 ),
               ),
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
@@ -236,7 +250,11 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
             color: isDark ? AppColors.nebulaNavy : AppColors.lightCard,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? AppColors.nebulaNavyBorder : AppColors.lightBorder,
+              color: _hasReminder
+                  ? (isDark ? AppColors.pulsarCyan : AppColors.lightCyan)
+                  : (isDark
+                        ? AppColors.nebulaNavyBorder
+                        : AppColors.lightBorder),
             ),
           ),
           child: Material(
@@ -244,20 +262,27 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
             child: SwitchListTile(
               secondary: Icon(
                 Icons.notifications_outlined,
-                color: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
+                color: _hasReminder
+                    ? (isDark ? AppColors.pulsarCyan : AppColors.lightCyan)
+                    : (isDark
+                          ? AppColors.moonlightGrey
+                          : AppColors.lightTextSecondary),
               ),
               title: Text(
                 'Reminder',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+                  color: isDark
+                      ? AppColors.starlightWhite
+                      : AppColors.lightTextPrimary,
                 ),
               ),
               value: _hasReminder,
               onChanged: (val) {
                 setState(() {
                   _hasReminder = val;
+                  if (val) _hasAlarm = false;
                 });
               },
             ),
@@ -274,7 +299,9 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
             border: Border.all(
               color: _hasAlarm
                   ? (isDark ? AppColors.pulsarCyan : AppColors.lightCyan)
-                  : (isDark ? AppColors.nebulaNavyBorder : AppColors.lightBorder),
+                  : (isDark
+                        ? AppColors.nebulaNavyBorder
+                        : AppColors.lightBorder),
             ),
           ),
           child: Material(
@@ -284,29 +311,71 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
                 Icons.alarm_rounded,
                 color: _hasAlarm
                     ? (isDark ? AppColors.pulsarCyan : AppColors.lightCyan)
-                    : (isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary),
+                    : (isDark
+                          ? AppColors.moonlightGrey
+                          : AppColors.lightTextSecondary),
               ),
               title: Text(
                 'Alarm',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.starlightWhite : AppColors.lightTextPrimary,
+                  color: isDark
+                      ? AppColors.starlightWhite
+                      : AppColors.lightTextPrimary,
                 ),
               ),
               subtitle: Text(
                 'Rings loud alarm when due',
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? AppColors.moonlightGrey : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.moonlightGrey
+                      : AppColors.lightTextSecondary,
                 ),
               ),
               value: _hasAlarm,
               onChanged: (val) {
                 setState(() {
                   _hasAlarm = val;
+                  if (val) _hasReminder = false;
                 });
               },
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // Tooltip / Explanatory hint below options
+        Tooltip(
+          message: 'Select either Reminder or Alarm. Both the options will provide a reminder/alert for your task.',
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 15,
+                  color: isDark
+                      ? AppColors.moonlightGrey
+                      : AppColors.lightTextSecondary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Select either Reminder or Alarm. Both the options will provide a reminder/alert for your task.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark
+                          ? AppColors.moonlightGrey
+                          : AppColors.lightTextSecondary,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -317,10 +386,14 @@ class _ManualEntryTabState extends State<ManualEntryTab> {
         ElevatedButton(
           onPressed: _saveTask,
           style: ElevatedButton.styleFrom(
-            backgroundColor: isDark ? AppColors.pulsarCyan : AppColors.lightCyan,
+            backgroundColor: isDark
+                ? AppColors.pulsarCyan
+                : AppColors.lightCyan,
             foregroundColor: isDark ? AppColors.cosmicBlack : Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             elevation: 0,
           ),
           child: const Text(
